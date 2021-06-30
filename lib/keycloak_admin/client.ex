@@ -8,39 +8,51 @@ defmodule KeycloakAdmin.Client do
   @doc """
   obtain token
   """
-  def obtain_token do
-    :post
-    |> Finch.build(
-      token_url(),
-      [{"Content-Type", "application/x-www-form-urlencoded"}],
-      token_request_body()
-    )
-    |> Finch.request(KcFinch)
-    |> parse_token()
-  end
-
-  def parse_token({:ok, %Response{body: body}}) do
+  def obtain_token(base_url, client_name, client_secret) do
     token =
-      body
-      |> Jason.decode!()
+      :post
+      |> Finch.build(
+        token_url(base_url),
+        [{"Content-Type", "application/x-www-form-urlencoded"}],
+        token_request_body(client_name, client_secret)
+      )
+      |> Finch.request(KcFinch)
+      |> parse_response()
       |> Map.get("access_token")
 
     {:ok, token}
   end
 
-  def token_request_body do
+  def get_users(token, base_url, realm) do
+    result =
+      :get
+      |> Finch.build(
+        "#{api_url(base_url, realm)}/users",
+        [{"Authorization", "bearer #{token}"}]
+      )
+      |> Finch.request(KcFinch)
+      |> parse_response()
+
+    {:ok, result}
+  end
+
+  defp parse_response({:ok, %Response{body: body}}) do
+    Jason.decode!(body)
+  end
+
+  defp token_request_body(client_name, client_secret) do
     URI.encode_query(%{
       "grant_type" => "client_credentials",
-      "client_id" => keycloak(:client_name),
-      "client_secret" => keycloak(:client_secret)
+      "client_id" => client_name,
+      "client_secret" => client_secret
     })
   end
 
-  def keycloak(config_key) do
-    Application.fetch_env!(:keycloak_admin, config_key)
+  defp token_url(base_url) do
+    "#{base_url}/auth/realms/master/protocol/openid-connect/token"
   end
 
-  def token_url do
-    "#{keycloak(:base_url)}/auth/realms/master/protocol/openid-connect/token"
+  defp api_url(base_url, realm) do
+    "#{base_url}/auth/admin/realms/#{realm}"
   end
 end

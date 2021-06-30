@@ -8,6 +8,10 @@ defmodule KeycloakAdmin do
     GenServer.cast(Server, :login)
   end
 
+  def get_users() do
+    GenServer.call(Server, :get_users)
+  end
+
   def hello do
     :world
   end
