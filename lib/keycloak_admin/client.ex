@@ -27,7 +27,7 @@ defmodule KeycloakAdmin.Client do
     {:ok, result} =
       :get
       |> Finch.build(
-        "#{api_url(base_url, realm)}/users?#{query_params}",
+        "#{api_url(base_url, realm)}/users?#{get_params(query_params)}",
         [{"Authorization", "bearer #{token}"}]
       )
       |> Finch.request(KcFinch)
@@ -36,17 +36,15 @@ defmodule KeycloakAdmin.Client do
     {:ok, result}
   end
 
-  def create_user(token, base_url, realm, user_json) do
-    {:ok, result} =
-      :post
-      |> Finch.build(
-        "#{api_url(base_url, realm)}/users",
-        [{"Authorization", "bearer #{token}"}, {"Content-Type", "application/json"}],
-        user_json
-      )
-      |> Finch.request(KcFinch)
-
-    {:ok, result.status}
+  def create_user(token, base_url, realm, user_data) do
+    :post
+    |> Finch.build(
+      "#{api_url(base_url, realm)}/users",
+      [{"Authorization", "bearer #{token}"}, {"Content-Type", "application/json"}],
+      post_params(user_data)
+    )
+    |> Finch.request(KcFinch)
+    |> parse_post_result(:create_user, user_data)
   end
 
   defp parse_response({:ok, %Response{body: body}}) do
@@ -56,6 +54,24 @@ defmodule KeycloakAdmin.Client do
   defp parse_response({:error, error}) do
     Logger.error("ERROR: #{inspect(error)}")
     {:error, "ERROR: #{inspect(error)}"}
+  end
+
+  defp parse_post_result({:ok, %Response{body: body, status: status, headers: headers}}, op, input) do
+    content_type = headers |> Enum.into(%{}) |> Map.get("content-type")
+
+    cond do
+      status == 200 ->
+        {:ok, body}
+
+      status == 201 ->
+        {:ok, "empty response"}
+
+      content_type == "application/json" ->
+        {:error, {status, op, input, Jason.decode!(body)}}
+
+      true ->
+        {:error, {status, op, input, body}}
+    end
   end
 
   defp token_request_body(client_name, client_secret) do
@@ -72,5 +88,21 @@ defmodule KeycloakAdmin.Client do
 
   defp api_url(base_url, realm) do
     "#{base_url}/auth/admin/realms/#{realm}"
+  end
+
+  defp get_params(struct) when is_map(struct) do
+    struct
+    |> Map.from_struct()
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> URI.encode_query()
+  end
+
+  defp post_params(struct) when is_map(struct) do
+    struct
+    |> Map.from_struct()
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Map.new()
+    |> IO.inspect()
+    |> Jason.encode!()
   end
 end

@@ -17,7 +17,15 @@ defmodule KeycloakAdmin do
     GenServer.call(Server, {:get_users, query})
   end
 
-  def create_user(%User{} = user_object) do
+  @doc """
+  send a request to create a user and returns without waiting for a result.
+  If any errors happened they will be stored and can be retrieved using `KeycloakAdmin.get_errors()`
+  """
+  def async_create_user(%User{} = user_object) do
     GenServer.cast(Server, {:create_user, user_object})
+  end
+
+  def get_errors() do
+    GenServer.call(Server, :get_errors)
   end
 end

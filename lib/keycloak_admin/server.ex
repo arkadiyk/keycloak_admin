@@ -16,6 +16,7 @@ defmodule KeycloakAdmin.Server do
   def init(_) do
     {:ok,
      %{
+       errors: [],
        config: %{
          realm: config(:realm),
          base_url: config(:base_url),
@@ -33,8 +34,10 @@ defmodule KeycloakAdmin.Server do
   @impl true
   def handle_cast({:create_user, user_data}, %{token: token, config: config} = state) do
     %{base_url: base_url, realm: realm} = config
-    {:ok, _status} = Client.create_user(token, base_url, realm, post_params(user_data))
-    {:noreply, state}
+    case Client.create_user(token, base_url, realm, user_data) do
+      {:ok, _status} -> {:noreply, state}
+      {:error, error} -> {:noreply, Map.put(state, :errors, [error | state.errors])}
+    end
   end
 
   @impl true
@@ -50,8 +53,13 @@ defmodule KeycloakAdmin.Server do
   @impl true
   def handle_call({:get_users, query}, _from, %{token: token, config: config} = state) do
     %{base_url: base_url, realm: realm} = config
-    {:ok, users} = Client.get_users(token, base_url, realm, get_params(query))
+    {:ok, users} = Client.get_users(token, base_url, realm, query)
     {:reply, users, state}
+  end
+
+  @impl true
+  def handle_call(:get_errors, _from, state) do
+    {:reply, state.errors, state}
   end
 
   @impl true
@@ -72,21 +80,5 @@ defmodule KeycloakAdmin.Server do
 
   defp config(config_key) do
     Application.fetch_env!(:keycloak_admin, config_key)
-  end
-
-  defp get_params(struct) when is_map(struct) do
-    struct
-    |> Map.from_struct()
-    |> Enum.reject(fn {_, v} -> is_nil(v) end)
-    |> URI.encode_query()
-  end
-
-  defp post_params(struct) when is_map(struct) do
-    struct
-    |> Map.from_struct()
-    |> Enum.reject(fn {_, v} -> is_nil(v) end)
-    |> Map.new()
-    |> IO.inspect()
-    |> Jason.encode!()
   end
 end
