@@ -3,16 +3,17 @@ defmodule KeycloakAdmin do
   Documentation for `KeycloakAdmin`.
   """
   alias KeycloakAdmin.Server
+  alias KeycloakAdmin.Representations.UserQuery
 
   def login() do
     GenServer.cast(Server, :login)
   end
 
   def get_users() do
-    GenServer.call(Server, :get_users)
+    GenServer.call(Server, {:get_users, %UserQuery{}})
   end
 
-  def hello do
-    :world
+  def get_users(%UserQuery{} = query) do
+    GenServer.call(Server, {:get_users, query})
   end
 end

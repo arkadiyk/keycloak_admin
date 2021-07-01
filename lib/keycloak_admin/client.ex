@@ -18,16 +18,16 @@ defmodule KeycloakAdmin.Client do
       )
       |> Finch.request(KcFinch)
       |> parse_response()
-      |> Map.get("access_token")
 
     {:ok, token}
   end
 
-  def get_users(token, base_url, realm) do
+  def get_users(token, base_url, realm, query_params) do
+    IO.inspect("#{api_url(base_url, realm)}/users?#{query_params}")
     result =
       :get
       |> Finch.build(
-        "#{api_url(base_url, realm)}/users",
+        "#{api_url(base_url, realm)}/users?#{query_params}",
         [{"Authorization", "bearer #{token}"}]
       )
       |> Finch.request(KcFinch)
