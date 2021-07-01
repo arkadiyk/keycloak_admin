@@ -27,23 +27,42 @@ defmodule KeycloakAdmin.Server do
 
   @impl true
   def handle_cast(:login, state) do
-    send(self(), :refresh_token)
+    setup_token(state)
+  end
+
+  @impl true
+  def handle_cast({:create_user, user_data}, %{token: token, config: config} = state) do
+    %{base_url: base_url, realm: realm} = config
+    {:ok, _status} = Client.create_user(token, base_url, realm, post_params(user_data))
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(:refresh_token, state) do
-    IO.inspect(state, label: "**** refreshing")
-    %{"access_token" => access_token, "expires_in" => expires_in} = login(state.config)
-    Process.send_after(self(), :refresh_token, (expires_in - 10) * 1000)
-    {:noreply, Map.put(state, :token, access_token)}
+  def handle_cast(_, state) do
+    {:reply, {:error, "Please run KeycloakAdmin.login() before any other functions"}, state}
   end
 
   @impl true
-  def handle_call({:get_users, query}, _from, state) do
-    %{base_url: base_url, realm: realm} = state.config
-    users = Client.get_users(state.token, base_url, realm, get_params(query))
+  def handle_info(:refresh_token, state) do
+    setup_token(state)
+  end
+
+  @impl true
+  def handle_call({:get_users, query}, _from, %{token: token, config: config} = state) do
+    %{base_url: base_url, realm: realm} = config
+    {:ok, users} = Client.get_users(token, base_url, realm, get_params(query))
     {:reply, users, state}
+  end
+
+  @impl true
+  def handle_call(_, _from, state) do
+    {:reply, {:error, "Please run KeycloakAdmin.login() before any other functions"}, state}
+  end
+
+  defp setup_token(state) do
+    %{"access_token" => access_token, "expires_in" => expires_in} = login(state.config)
+    Process.send_after(self(), :refresh_token, (expires_in - 10) * 1000)
+    {:noreply, Map.put(state, :token, access_token)}
   end
 
   defp login(%{base_url: base_url, client_name: client_name, client_secret: client_secret}) do
@@ -60,5 +79,14 @@ defmodule KeycloakAdmin.Server do
     |> Map.from_struct()
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> URI.encode_query()
+  end
+
+  defp post_params(struct) when is_map(struct) do
+    struct
+    |> Map.from_struct()
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Map.new()
+    |> IO.inspect()
+    |> Jason.encode!()
   end
 end
