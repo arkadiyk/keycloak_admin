@@ -21,8 +21,12 @@ defmodule KeycloakAdmin do
   send a request to create a user and returns without waiting for a result.
   If any errors happened they will be stored and can be retrieved using `KeycloakAdmin.get_errors()`
   """
-  def async_create_user(%User{} = user_object) do
+  def create_user_async(%User{} = user_object) do
     GenServer.cast(Server, {:create_user, user_object})
+  end
+
+  def delete_users_async(%UserQuery{} = query, safety_limit \\ 1) do
+    GenServer.cast(Server, {:delete_users, query, safety_limit})
   end
 
   def get_errors() do
