@@ -8,8 +8,13 @@ defmodule KeycloakAdmin.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      {Finch, name: KcFinch},
-      KeycloakAdmin.Server
+      {Finch,
+       name: KcFinch,
+       pools: %{
+         :default => [size: 25],
+       }},
+      KeycloakAdmin.Server,
+      {Task.Supervisor, name: KeycloakAdmin.TaskSupervisor}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
