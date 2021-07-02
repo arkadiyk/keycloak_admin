@@ -11,7 +11,7 @@ defmodule KeycloakAdmin.Application do
       {Finch,
        name: KcFinch,
        pools: %{
-         :default => [size: 25],
+         :default => [size: fetch_config(:max_concurrency, 25) + 5]
        }},
       KeycloakAdmin.Server,
       {Task.Supervisor, name: KeycloakAdmin.TaskSupervisor}
@@ -21,5 +21,16 @@ defmodule KeycloakAdmin.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: KeycloakAdmin.Server.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  def fetch_config(key, default \\ nil) do
+    case Application.fetch_env(:keycloak_admin, key) do
+      {:ok, config_value} ->
+        config_value
+
+      :error ->
+        if is_nil(default), do: raise("required `#{key}` configuration is not defined")
+        default
+    end
   end
 end

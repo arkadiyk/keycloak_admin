@@ -18,10 +18,10 @@ defmodule KeycloakAdmin.Server do
      %{
        errors: [],
        config: %{
-         realm: config(:realm),
-         base_url: config(:base_url),
-         client_name: config(:client_name),
-         client_secret: config(:client_secret)
+         realm: KeycloakAdmin.Application.fetch_config(:realm),
+         base_url: KeycloakAdmin.Application.fetch_config(:base_url),
+         client_name: KeycloakAdmin.Application.fetch_config(:client_name),
+         client_secret: KeycloakAdmin.Application.fetch_config(:client_secret)
        }
      }}
   end
@@ -62,9 +62,5 @@ defmodule KeycloakAdmin.Server do
   defp login(%{base_url: base_url, client_name: client_name, client_secret: client_secret}) do
     {:ok, token} = Client.obtain_token(base_url, client_name, client_secret)
     token
-  end
-
-  defp config(config_key) do
-    Application.fetch_env!(:keycloak_admin, config_key)
   end
 end
