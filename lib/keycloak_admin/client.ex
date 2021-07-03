@@ -113,7 +113,6 @@ defmodule KeycloakAdmin.Client do
     |> Map.from_struct()
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()
-    |> IO.inspect()
     |> Jason.encode!()
   end
 end

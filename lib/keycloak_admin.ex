@@ -20,13 +20,12 @@ defmodule KeycloakAdmin do
   end
 
   def batch_create_users(users) when is_list(users) do
-    stream =
-      Task.async_stream(users, fn user -> create_user(user) end,
-        timeout: 60_000,
-        max_concurrency: KeycloakAdmin.Application.fetch_config(:max_concurrency, 25)
-      )
-
-    Enum.to_list(stream)
+    users
+    |> Task.async_stream(&create_user/1,
+      timeout: 60_000,
+      max_concurrency: KeycloakAdmin.Application.fetch_config(:max_concurrency, 25)
+    )
+    |> Enum.to_list()
   end
 
   def batch_delete_users(%UserQuery{} = query, safety_limit \\ 1) do
@@ -42,13 +41,14 @@ defmodule KeycloakAdmin do
 
       [error]
     else
-      stream =
-        Task.async_stream(users, fn %{"id" => user_id} -> delete_user(user_id) end,
-          timeout: 60_000,
-          max_concurrency: KeycloakAdmin.Application.fetch_config(:max_concurrency, 25)
-        )
-
-      Enum.to_list(stream)
+      users
+      |> Enum.map(& &1["id"])
+      |> Task.async_stream(
+        &delete_user/1,
+        timeout: 60_000,
+        max_concurrency: KeycloakAdmin.Application.fetch_config(:max_concurrency, 25)
+      )
+      |> Enum.to_list()
     end
   end
 
