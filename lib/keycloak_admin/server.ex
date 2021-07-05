@@ -21,7 +21,8 @@ defmodule KeycloakAdmin.Server do
          realm: KeycloakAdmin.Application.fetch_config(:realm),
          base_url: KeycloakAdmin.Application.fetch_config(:base_url),
          client_name: KeycloakAdmin.Application.fetch_config(:client_name),
-         client_secret: KeycloakAdmin.Application.fetch_config(:client_secret)
+         client_secret: KeycloakAdmin.Application.fetch_config(:client_secret),
+         max_concurrency: KeycloakAdmin.Application.fetch_config(:max_concurrency, 25)
        }
      }}
   end

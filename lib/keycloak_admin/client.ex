@@ -3,7 +3,7 @@ defmodule KeycloakAdmin.Client do
   Communications with Keycloak.
   """
 
-  alias KeycloakAdmin.AsyncError
+  alias KeycloakAdmin.KcResponse
   alias Finch.Response
   require Logger
 
@@ -48,13 +48,14 @@ defmodule KeycloakAdmin.Client do
     |> parse_post_result(:create_user, user_data)
   end
 
-  def delete_user(token, base_url, realm, id) do
+  def delete_user(token, base_url, realm, user) do
+    id = user["id"]
     :delete
-    |> Finch.build("#{api_url(base_url, realm)}/users/#{URI.encode(id)}", [
+    |> Finch.build("#{api_url(base_url, realm)}/users/#{id}", [
       {"Authorization", "bearer #{token}"}
     ])
     |> Finch.request(KcFinch)
-    |> parse_post_result(:delete_user, %{id: id})
+    |> parse_post_result(:delete_user, user)
   end
 
   defp parse_response({:ok, %Response{body: body}}) do
@@ -72,17 +73,16 @@ defmodule KeycloakAdmin.Client do
          input
        ) do
     content_type = headers |> Enum.into(%{}) |> Map.get("content-type")
+    result = if status in [200, 201, 204], do: :ok, else: :error
 
-    cond do
-      status in [200, 201, 204] ->
-        {:ok, body}
+    response =
+      if content_type == "application/json" do
+        Jason.decode!(body)
+      else
+        body
+      end
 
-      content_type == "application/json" ->
-        {:error, %AsyncError{op: op, input: input, status: status, error: Jason.decode!(body)}}
-
-      true ->
-        {:error, %AsyncError{op: op, input: input, status: status, error: body}}
-    end
+    {result, %KcResponse{op: op, input: input, status: status, response: response}}
   end
 
   defp token_request_body(client_name, client_secret) do
