@@ -11,7 +11,7 @@ defmodule KeycloakAdmin.Application do
       {Finch,
        name: KcFinch,
        pools: %{
-         :default => [size: fetch_config(:max_concurrency, 25) + 5]
+         :default => [size: max_concurrency() + 5]
        }},
       KeycloakAdmin.Server,
       {Task.Supervisor, name: KeycloakAdmin.TaskSupervisor}
@@ -32,5 +32,9 @@ defmodule KeycloakAdmin.Application do
         if is_nil(default), do: raise("required `#{key}` configuration is not defined")
         default
     end
+  end
+
+  def max_concurrency do
+    :max_concurrency |> fetch_config("25") |> String.to_integer()
   end
 end
