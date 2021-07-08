@@ -55,7 +55,7 @@ defmodule KeycloakAdmin.Server do
   end
 
   defp setup_token(state) do
-    %{"access_token" => access_token, "expires_in" => expires_in} = login(state.config)
+    %{access_token: access_token, expires_in: expires_in} = login(state.config)
     Process.send_after(self(), :refresh_token, (expires_in - 10) * 1000)
     access_token
   end

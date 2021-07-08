@@ -49,7 +49,7 @@ defmodule KeycloakAdmin.Client do
   end
 
   def delete_user(token, base_url, realm, user) do
-    id = user["id"]
+    id = user.id
     :delete
     |> Finch.build("#{api_url(base_url, realm)}/users/#{id}", [
       {"Authorization", "bearer #{token}"}
@@ -59,7 +59,7 @@ defmodule KeycloakAdmin.Client do
   end
 
   defp parse_response({:ok, %Response{body: body}}) do
-    Jason.decode(body)
+    Jason.decode(body, keys: :atoms)
   end
 
   defp parse_response({:error, error}) do
@@ -77,7 +77,7 @@ defmodule KeycloakAdmin.Client do
 
     response =
       if content_type == "application/json" do
-        Jason.decode!(body)
+        Jason.decode!(body, keys: :atoms)
       else
         body
       end

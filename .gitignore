@@ -26,3 +26,5 @@ keycloak_admin-*.tar
 /tmp/
 
 /config
+
+.env

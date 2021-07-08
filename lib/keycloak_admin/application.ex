@@ -11,7 +11,7 @@ defmodule KeycloakAdmin.Application do
       {Finch,
        name: KcFinch,
        pools: %{
-         :default => [size: max_concurrency() + 5]
+         default: [size: max_concurrency() + 5]
        }},
       KeycloakAdmin.Server,
       {Task.Supervisor, name: KeycloakAdmin.TaskSupervisor}
