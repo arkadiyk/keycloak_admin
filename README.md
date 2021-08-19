@@ -26,7 +26,7 @@ config :keycloak_admin,
 ```elixir
 def deps do
   [
-    {:keycloak_admin, git: "https://github.com/arkadiyk/keycloak_admin.git", tag: "0.0.1"}
+    {:keycloak_admin, git: "https://github.com/arkadiyk/keycloak_admin.git", tag: "0.0.2"}
   ]
 end
 ```
