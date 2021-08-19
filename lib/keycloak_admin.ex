@@ -55,6 +55,20 @@ defmodule KeycloakAdmin do
     |> Enum.to_list()
   end
 
+  def batch_update_users(users, options \\ []) when is_list(users) do
+    callback = Keyword.get(options, :callback, & &1)
+
+    users
+    |> Task.async_stream(&update_user/1,
+      timeout: 60_000,
+      ordered: false,
+      max_concurrency: get_config(:max_concurrency)
+    )
+    |> Stream.map(fn {:ok, res} -> res end)
+    |> Stream.map(callback)
+    |> Enum.to_list()
+  end
+
   def delete_users(%UserQuery{} = userQuery, options \\ []) do
     safety_limit = Keyword.get(options, :safety_limit, 1)
     callback = Keyword.get(options, :callback, & &1)
@@ -88,6 +102,12 @@ defmodule KeycloakAdmin do
     token = get_token()
     %{base_url: base_url, realm: realm} = get_config()
     Client.delete_user(token, base_url, realm, user)
+  end
+
+  def update_user(%User{} = user_data) do
+    token = get_token()
+    %{base_url: base_url, realm: realm} = get_config()
+    Client.update_user(token, base_url, realm, user_data)
   end
 
   defp check_limit(users, limit, query) do

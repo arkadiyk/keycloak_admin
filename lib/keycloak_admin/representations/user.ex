@@ -27,6 +27,7 @@ defmodule KeycloakAdmin.Representations.User do
     :requiredActions,
     :self,
     :serviceAccountClientId,
+    :totp,
     :username
   ]
 end
