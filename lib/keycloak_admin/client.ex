@@ -106,11 +106,11 @@ defmodule KeycloakAdmin.Client do
   end
 
   defp token_url(base_url) do
-    "#{base_url}/auth/realms/master/protocol/openid-connect/token"
+    "#{base_url}/realms/master/protocol/openid-connect/token"
   end
 
   defp api_url(base_url, realm) do
-    "#{base_url}/auth/admin/realms/#{realm}"
+    "#{base_url}/admin/realms/#{realm}"
   end
 
   defp get_params(struct) when is_map(struct) do
