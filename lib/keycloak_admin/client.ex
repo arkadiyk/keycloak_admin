@@ -50,9 +50,15 @@ defmodule KeycloakAdmin.Client do
 
   defp create_user_post_params(user_data) when is_map(user_data) do
     user_data
-    |> Map.put(:emailVerified, true)
+    |> Map.put(:emailVerified, verified_email?(Map.get(user_data, :email)))
     |> post_params()
   end
+
+  defp verified_email?(email) when is_binary(email) do
+    String.trim(email) != ""
+  end
+
+  defp verified_email?(_email), do: false
 
   def delete_user(token, base_url, realm, user) do
     id = user.id

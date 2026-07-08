@@ -5,7 +5,19 @@ defmodule KeycloakAdminTest do
   alias KeycloakAdmin.KcResponse
   alias KeycloakAdmin.Representations.User
 
-  test "create_user marks email as verified" do
+  test "create_user marks non-empty email as verified" do
+    payload = create_user_payload(%User{email: "test@example.com", username: "test"})
+
+    assert payload["emailVerified"] == true
+  end
+
+  test "create_user does not mark empty email as verified" do
+    payload = create_user_payload(%User{email: "", username: "test"})
+
+    assert payload["emailVerified"] == false
+  end
+
+  defp create_user_payload(user) do
     if is_nil(Process.whereis(KcFinch)) do
       start_supervised!({Finch, name: KcFinch})
     end
@@ -27,18 +39,13 @@ defmodule KeycloakAdminTest do
         request
       end)
 
-    user = %User{email: "test@example.com", username: "test", emailVerified: false}
-
     assert {:ok, %KcResponse{status: 201}} =
              Client.create_user("token", "http://127.0.0.1:#{port}", "test", user)
 
-    payload =
-      server
-      |> Task.await()
-      |> request_body()
-      |> Jason.decode!()
-
-    assert payload["emailVerified"] == true
+    server
+    |> Task.await()
+    |> request_body()
+    |> Jason.decode!()
   end
 
   defp read_http_request(socket, acc \\ "") do
