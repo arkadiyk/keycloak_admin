@@ -42,14 +42,21 @@ defmodule KeycloakAdmin.Client do
     |> Finch.build(
       "#{api_url(base_url, realm)}/users",
       [{"Authorization", "bearer #{token}"}, {"Content-Type", "application/json"}],
-      post_params(user_data)
+      create_user_post_params(user_data)
     )
     |> Finch.request(KcFinch)
     |> parse_post_result(:create_user, user_data)
   end
 
+  defp create_user_post_params(user_data) when is_map(user_data) do
+    user_data
+    |> Map.put(:emailVerified, true)
+    |> post_params()
+  end
+
   def delete_user(token, base_url, realm, user) do
     id = user.id
+
     :delete
     |> Finch.build("#{api_url(base_url, realm)}/users/#{id}", [
       {"Authorization", "bearer #{token}"}
@@ -60,6 +67,7 @@ defmodule KeycloakAdmin.Client do
 
   def update_user(token, base_url, realm, user_data) do
     id = user_data.id
+
     :put
     |> Finch.build(
       "#{api_url(base_url, realm)}/users/#{id}",

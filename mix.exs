@@ -22,7 +22,7 @@ defmodule KeycloakAdmin.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:finch, "~> 0.16.0"},
+      {:finch, "~> 0.23.0"},
       {:jason, "~> 1.4"}
     ]
   end
